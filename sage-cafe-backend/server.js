@@ -11,13 +11,14 @@ app.use(bodyParser.json());
 let bookingsList = [];
 let ordersList = [];
 
-// Configure Gmail Sender
-// NOTE: Replace 'YOUR_16_CHAR_GOOGLE_APP_PASSWORD' with your Gmail App Password
+// Configure Gmail Sender using Port 465 to bypass Render timeout restrictions
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true for port 465
     auth: {
-        user: 'ramarorausa@gmail.com',
-        pass: 'nkfvolgyuqsdjedf' 
+        user: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
+        pass: process.env.GMAIL_APP_PASS || 'nkfvolgyuqsdjedf' 
     }
 });
 
@@ -30,15 +31,15 @@ app.post('/api/book-table', (req, res) => {
 
     // Email to Cafe Owner (You)
     const mailToOwner = {
-        from: 'ramarorausa@gmail.com',
-        to: 'ramarorausa@gmail.com',
+        from: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
+        to: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
         subject: `🔔 New Table Booking: ${name} (${guests} Guests)`,
         text: `You have a new table booking!\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}\nDate: ${date}\nTime: ${time}\nGuests: ${guests}`
     };
 
     // Email to Customer
     const mailToCustomer = {
-        from: 'ramarorausa@gmail.com',
+        from: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
         to: email,
         subject: 'Table Reservation Confirmed - SaGe Cafe',
         text: `Hi ${name},\n\nYour table at SaGe Cafe is successfully reserved!\n\nDate: ${date}\nTime: ${time}\nGuests: ${guests}\n\nWe look forward to welcoming you!\n\nBest regards,\nSaGe Cafe`
@@ -72,15 +73,15 @@ app.post('/api/place-order', (req, res) => {
 
     // Email to Cafe Owner (You)
     const mailToOwner = {
-        from: 'ramarorausa@gmail.com',
-        to: 'ramarorausa@gmail.com',
+        from: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
+        to: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
         subject: `💰 New Order [${newOrder.id}] - ₹${total} (${paymentMethod})`,
         text: `New Online Order Received!\n\nOrder ID: ${newOrder.id}\nCustomer: ${customerName}\nPhone: ${customerPhone}\nEmail: ${customerEmail}\nType: ${orderType}\nPayment: ${paymentMethod}\n\nItems:\n${itemsString}\n\nTotal: ₹${total}`
     };
 
     // Email to Customer
     const mailToCustomer = {
-        from: 'ramarorausa@gmail.com',
+        from: process.env.GMAIL_USER || 'ramarorausa@gmail.com',
         to: customerEmail,
         subject: `Order Receipt & Confirmation [${newOrder.id}] - SaGe Cafe`,
         text: `Hi ${customerName},\n\nThank you for ordering with SaGe Cafe!\n\nOrder ID: ${newOrder.id}\nOrder Type: ${orderType}\nPayment Method: ${paymentMethod}\n\nOrdered Items:\n${itemsString}\n\nTotal Paid: ₹${total}\n\nYour order is being prepared and will be ready in 15-20 minutes.\n\nBest regards,\nSaGe Cafe`
@@ -100,7 +101,7 @@ app.post('/api/place-order', (req, res) => {
 });
 
 // 3. API Endpoints for Dashboard to fetch data
-api_bookings = app.get('/api/admin/bookings', (req, res) => {
+app.get('/api/admin/bookings', (req, res) => {
     res.json(bookingsList);
 });
 
@@ -108,7 +109,8 @@ app.get('/api/admin/orders', (req, res) => {
     res.json(ordersList);
 });
 
-// Start Server
-app.listen(5000, () => {
-    console.log('🚀 SaGe Cafe Backend Server running on http://localhost:5000');
+// Start Server (using Render's dynamic port or default 5000)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`🚀 SaGe Cafe Backend Server running on port ${PORT}`);
 });
