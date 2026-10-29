@@ -1128,7 +1128,7 @@
             };
 
             // Send to local Node.js backend server
-            fetch('http://localhost:5000/api/place-order', {
+            fetch('https://sage-cafe-backend.onrender.com/api/place-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderPayload)
@@ -1184,7 +1184,7 @@
 
             const bookingData = { name, phone, email, date, time, guests, seating };
 
-            fetch('http://localhost:5000/api/book-table', {
+            fetch('https://sage-cafe-backend.onrender.com/api/book-table', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingData)

@@ -62,7 +62,7 @@
     <script>
         function loadData() {
             // Fetch Bookings
-            fetch('http://localhost:5000/api/admin/bookings')
+            fetch('https://sage-cafe-backend.onrender.com/api/admin/bookings')
                 .then(res => res.json())
                 .then(data => {
                     let html = '';
@@ -74,7 +74,7 @@
                 });
 
             // Fetch Orders
-            fetch('http://localhost:5000/api/admin/orders')
+            fetch('https://sage-cafe-backend.onrender.com/api/admin/orders')
                 .then(res => res.json())
                 .then(data => {
                     let html = '';
