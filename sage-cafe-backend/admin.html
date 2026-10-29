@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SaGe Cafe - Live Desktop Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; color: #333; }
+        h1 { color: #2c3e50; }
+        .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; font-size: 14px; }
+        th { background: #2c3e50; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        button { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2563eb; }
+    </style>
+</head>
+<body>
+
+    <h1>☕ SaGe Cafe - Owner Dashboard</h1>
+    <button onclick="loadData()">🔄 Refresh Data</button>
+
+    <div class="section">
+        <h2>Table Bookings</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Date & Time</th>
+                    <th>Guests</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsTable">
+                <tr><td colspan="6">Loading bookings...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Customer Orders & Payments</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Phone / Email</th>
+                    <th>Type</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTable">
+                <tr><td colspan="7">Loading orders...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function loadData() {
+            // Fetch Bookings
+            fetch('http://localhost:5000/api/admin/bookings')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    if(data.length === 0) html = '<tr><td colspan="6">No bookings yet.</td></tr>';
+                    data.reverse().forEach(b => {
+                        html += `<tr><td>${b.id}</td><td>${b.name}</td><td>${b.phone}</td><td>${b.email || 'N/A'}</td><td>${b.date} @ ${b.time}</td><td>${b.guests}</td></tr>`;
+                    });
+                    document.getElementById('bookingsTable').innerHTML = html;
+                });
+
+            // Fetch Orders
+            fetch('http://localhost:5000/api/admin/orders')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    if(data.length === 0) html = '<tr><td colspan="7">No orders yet.</td></tr>';
+                    data.reverse().forEach(o => {
+                        let itemsText = o.items.map(i => `${i.name} (${i.quantity})`).join(', ');
+                        html += `<tr><td>${o.id}</td><td>${o.customerName}</td><td>${o.customerPhone}<br>${o.customerEmail}</td><td>${o.orderType}</td><td>${itemsText}</td><td>₹${o.total}</td><td><b>${o.paymentMethod}</b></td></tr>`;
+                    });
+                    document.getElementById('ordersTable').innerHTML = html;
+                });
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadData, 5000);
+        loadData();
+    </script>
+</body>
+</html>
