@@ -6,36 +6,42 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// In-memory storage for bookings and orders
+// In-memory storage for bookings and orders (resets if server restarts)
 let bookingsList = [];
 let ordersList = [];
 
-// Helper function to send email via Resend HTTP API (No npm install required!)
-async function sendEmailViaResend({ to, subject, text }) {
-    const apiKey = process.env.RESEND_API_KEY || 're_123456789';
-    
+// Helper function to send email via EmailJS REST API
+async function sendEmailViaEmailJS({ to, subject, message }) {
+    const SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
+    const TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
+    const PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+
     try {
-        const response = await fetch('https://api.resend.com/emails', {
+        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: 'SaGe Cafe <onboarding@resend.dev>',
-                to: [to],
-                subject: subject,
-                text: text
+                service_id: SERVICE_ID,
+                template_id: TEMPLATE_ID,
+                user_id: PUBLIC_KEY,
+                template_params: {
+                    to_email: to,
+                    subject: subject,
+                    message: message
+                }
             })
         });
 
-        const data = await response.json();
         if (!response.ok) {
-            console.log('Resend API Error:', data);
+            const errorText = await response.text();
+            console.log('EmailJS Error:', errorText);
+        } else {
+            console.log('Email sent successfully via EmailJS to:', to);
         }
-        return data;
     } catch (err) {
-        console.log('Email fetch network error:', err);
+        console.log('EmailJS network error:', err);
     }
 }
 
@@ -46,19 +52,19 @@ app.post('/api/book-table', async (req, res) => {
     const newBooking = { id: Date.now(), name, phone, email, date, time, guests, timestamp: new Date() };
     bookingsList.push(newBooking);
 
-    // Email to Cafe Owner (You)
-    await sendEmailViaResend({
-        to: 'ramarorausa@gmail.com',
+    // Email to Cafe Owner
+    await sendEmailViaEmailJS({
+        to: 'ramarorausa@gmail.com', // Updated to your primary cafe inbox
         subject: `🔔 New Table Booking: ${name} (${guests} Guests)`,
-        text: `You have a new table booking!\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}\nDate: ${date}\nTime: ${time}\nGuests: ${guests}`
+        message: `You have a new table booking!\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}\nDate: ${date}\nTime: ${time}\nGuests: ${guests}`
     });
 
     // Email to Customer
     if (email) {
-        await sendEmailViaResend({
+        await sendEmailViaEmailJS({
             to: email,
             subject: 'Table Reservation Confirmed - SaGe Cafe',
-            text: `Hi ${name},\n\nYour table at SaGe Cafe is successfully reserved!\n\nDate: ${date}\nTime: ${time}\nGuests: ${guests}\n\nWe look forward to welcoming you!\n\nBest regards,\nSaGe Cafe`
+            message: `Hi ${name},\n\nYour table at SaGe Cafe is successfully reserved!\n\nDate: ${date}\nTime: ${time}\nGuests: ${guests}\n\nWe look forward to welcoming you!\n\nBest regards,\nSaGe Cafe`
         });
     }
 
@@ -79,18 +85,18 @@ app.post('/api/place-order', async (req, res) => {
     let itemsString = items.map(i => `- ${i.name} x ${i.quantity} (₹${i.price * i.quantity})`).join('\n');
 
     // Email to Cafe Owner
-    await sendEmailViaResend({
-        to: 'ramarorausa@gmail.com',
+    await sendEmailViaEmailJS({
+        to: 'ramarorausa@gmail.com', // Updated to your primary cafe inbox
         subject: `💰 New Order [${newOrder.id}] - ₹${total} (${paymentMethod})`,
-        text: `New Online Order Received!\n\nOrder ID: ${newOrder.id}\nCustomer: ${customerName}\nPhone: ${customerPhone}\nEmail: ${customerEmail}\nType: ${orderType}\nPayment: ${paymentMethod}\n\nItems:\n${itemsString}\n\nTotal: ₹${total}`
+        message: `New Online Order Received!\n\nOrder ID: ${newOrder.id}\nCustomer: ${customerName}\nPhone: ${customerPhone}\nEmail: ${customerEmail}\nType: ${orderType}\nPayment: ${paymentMethod}\n\nItems:\n${itemsString}\n\nTotal: ₹${total}`
     });
 
     // Email to Customer
     if (customerEmail) {
-        await sendEmailViaResend({
+        await sendEmailViaEmailJS({
             to: customerEmail,
             subject: `Order Receipt & Confirmation [${newOrder.id}] - SaGe Cafe`,
-            text: `Hi ${customerName},\n\nThank you for ordering with SaGe Cafe!\n\nOrder ID: ${newOrder.id}\nOrder Type: ${orderType}\nPayment Method: ${paymentMethod}\n\nOrdered Items:\n${itemsString}\n\nTotal Paid: ₹${total}\n\nYour order is being prepared and will be ready in 15-20 minutes.\n\nBest regards,\nSaGe Cafe`
+            message: `Hi ${customerName},\n\nThank you for ordering with SaGe Cafe!\n\nOrder ID: ${newOrder.id}\nOrder Type: ${orderType}\nPayment Method: ${paymentMethod}\n\nOrdered Items:\n${itemsString}\n\nTotal Paid: ₹${total}\n\nYour order is being prepared and will be ready in 15-20 minutes.\n\nBest regards,\nSaGe Cafe`
         });
     }
 
