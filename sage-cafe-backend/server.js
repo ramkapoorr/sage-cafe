@@ -15,6 +15,7 @@ async function sendEmailViaEmailJS({ to, subject, message }) {
     const SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
     const TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
     const PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+    const PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY; // <-- Added Private Key
 
     try {
         const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -26,6 +27,7 @@ async function sendEmailViaEmailJS({ to, subject, message }) {
                 service_id: SERVICE_ID,
                 template_id: TEMPLATE_ID,
                 user_id: PUBLIC_KEY,
+                accessToken: PRIVATE_KEY, // <-- Included for strict server mode
                 template_params: {
                     to_email: to,
                     subject: subject,
